@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model FoodEntry {
+  id          String      @id
+  userId      String
+  name        String
+  calories    Int
+  protein     Float
+  carbs       Float
+  fat         Float
+  createdAt   DateTime    @default(now())
+  UserProfile UserProfile @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+}
+
+model UserProfile {
+  id            String      @id
+  userId        String      @unique
+  firstName     String
+  age           Int?
+  weight        Float?
+  height        Float?
+  fitnessGoal   String?
+  activityLevel String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime
+  FoodEntry     FoodEntry[]
+  WaterLog      WaterLog[]
+
+  @@index([userId])
+}
+
+model WaterLog {
+  id          String      @id
+  userId      String
+  amount      Int
+  createdAt   DateTime    @default(now())
+  UserProfile UserProfile @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+}
+
+model experiences {
+  id           Int    @id @default(autoincrement())
+  positionName String @db.VarChar(256)
+  employeeName String @db.VarChar(256)
+  dateStarted  String @db.VarChar(15)
+  dateEnded    String @db.VarChar(15)
+  description1 String @db.VarChar(256)
+  description2 String @db.VarChar(256)
+  description3 String @db.VarChar(256)
+  imageUrl     String @db.VarChar(256)
+}
+
+model projects {
+  id          Int    @id @default(autoincrement())
+  name        String @db.VarChar(256)
+  description String @db.VarChar(256)
+  image       String @db.VarChar(256)
+  html_link   String @db.VarChar(256)
+  github_link String @db.VarChar(256)
+}
