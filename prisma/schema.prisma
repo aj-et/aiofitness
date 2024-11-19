@@ -35,10 +35,15 @@ model userprofile {
   updatedAt     DateTime
   foodentry     foodentry[]
   waterlog      waterlog[]
-
-  @@index([userId])
   workoutprogram workoutprogram[]
   workoutlog workoutlog[]
+  posts         post[]
+  likes         like[]
+  comments      comment[]
+  followers     follow[]    @relation("Following")
+  following     follow[]    @relation("Follower")
+
+  @@index([userId])
 }
 
 model waterlog {
@@ -97,7 +102,64 @@ model workoutlog {
   createdAt       DateTime       @default(now())
   userprofile     userprofile    @relation(fields: [userId], references: [userId])
   workoutprogram  workoutprogram? @relation(fields: [workoutProgramId], references: [id])
+  post post[]
 
   @@index([userId])
   @@index([workoutProgramId])
+}
+
+model post {
+  id          String     @id @default(uuid())
+  userId      String
+  content     String     @db.Text
+  workoutLogId String?   // Optional reference to a workout log
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userprofile userprofile @relation(fields: [userId], references: [userId])
+  workoutlog  workoutlog? @relation(fields: [workoutLogId], references: [id])
+  likes       like[]
+  comments    comment[]
+
+  @@index([userId])
+  @@index([workoutLogId])
+}
+
+model like {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userprofile userprofile @relation(fields: [userId], references: [userId])
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@index([postId])
+}
+
+model comment {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post      post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userprofile userprofile @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+  @@index([postId])
+}
+
+model follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    userprofile @relation("Follower", fields: [followerId], references: [userId])
+  following   userprofile @relation("Following", fields: [followingId], references: [userId])
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }
