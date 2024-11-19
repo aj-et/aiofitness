@@ -37,6 +37,8 @@ model userprofile {
   waterlog      waterlog[]
 
   @@index([userId])
+  workoutprogram workoutprogram[]
+  workoutlog workoutlog[]
 }
 
 model waterlog {
@@ -68,4 +70,34 @@ model projects {
   image       String @db.VarChar(256)
   html_link   String @db.VarChar(256)
   github_link String @db.VarChar(256)
+}
+
+model workoutprogram {
+  id          String        @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  workoutlogs workoutlog[]
+  userprofile userprofile   @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+}
+
+model workoutlog {
+  id              String         @id @default(uuid())
+  userId          String
+  workoutProgramId String?
+  exercise        String
+  sets            Int
+  reps            Int
+  weight          Float?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  userprofile     userprofile    @relation(fields: [userId], references: [userId])
+  workoutprogram  workoutprogram? @relation(fields: [workoutProgramId], references: [id])
+
+  @@index([userId])
+  @@index([workoutProgramId])
 }
