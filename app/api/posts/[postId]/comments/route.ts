@@ -1,17 +1,10 @@
 import { auth } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-// Define the correct type for Next.js route parameters
-type RouteContext = {
-  params: {
-    postId: string;
-  };
-};
-
 export async function GET(
-  req: Request,
-  { params }: RouteContext
+  req: NextRequest,
+  { params }: { params: { postId: string } }
 ) {
   try {
     const { postId } = params;
@@ -32,8 +25,8 @@ export async function GET(
 }
 
 export async function POST(
-  req: Request,
-  { params }: RouteContext
+  req: NextRequest,
+  { params }: { params: { postId: string } }
 ) {
   try {
     const { userId } = await auth();
