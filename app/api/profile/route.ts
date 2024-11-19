@@ -59,3 +59,35 @@ export async function PUT(req: Request) {
     );
   }
 }
+
+export async function GET() {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const userProfile = await prisma.userprofile.findUnique({
+      where: { userId },
+      include: {
+        _count: {
+          select: {
+            followers: true,
+            following: true,
+            posts: true,
+          },
+        },
+      },
+    });
+
+    if (!userProfile) {
+      return new NextResponse('Profile not found', { status: 404 });
+    }
+
+    return NextResponse.json(userProfile);
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    return new NextResponse('Internal Error', { status: 500 });
+  }
+}
