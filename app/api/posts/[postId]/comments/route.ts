@@ -1,22 +1,16 @@
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-interface Context {
-  params: Promise<{ postId: string }> | { postId: string };
-}
-
 export async function GET(
-  req: Request,
-  context: Context
+  req: NextRequest,
+  context: { params: Promise<{ postId: string }> }
 ) {
   try {
     const { postId } = await context.params;
-    
+
     const comments = await prisma.comment.findMany({
-      where: {
-        postId,
-      },
+      where: { postId },
       include: {
         userprofile: {
           select: {
@@ -25,21 +19,17 @@ export async function GET(
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    const transformedComments = comments.map(comment => ({
+    return NextResponse.json(comments.map(comment => ({
       id: comment.id,
       content: comment.content,
       createdAt: comment.createdAt,
       user: {
         name: `${comment.userprofile.firstName} ${comment.userprofile.lastName}`,
       },
-    }));
-
-    return NextResponse.json(transformedComments);
+    })));
   } catch (error) {
     console.error('Error fetching comments:', error);
     return new NextResponse('Internal Error', { status: 500 });
@@ -47,8 +37,8 @@ export async function GET(
 }
 
 export async function POST(
-  req: Request,
-  context: Context
+  req: NextRequest,
+  context: { params: Promise<{ postId: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -83,16 +73,14 @@ export async function POST(
       },
     });
 
-    const transformedComment = {
+    return NextResponse.json({
       id: comment.id,
       content: comment.content,
       createdAt: comment.createdAt,
       user: {
         name: `${comment.userprofile.firstName} ${comment.userprofile.lastName}`,
       },
-    };
-
-    return NextResponse.json(transformedComment);
+    });
   } catch (error) {
     console.error('Error creating comment:', error);
     return new NextResponse('Internal Error', { status: 500 });
