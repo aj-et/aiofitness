@@ -1,24 +1,18 @@
 import { auth } from '@clerk/nextjs/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-type RouteContext = {
-  params: {
-    postId: string;
-  };
-};
+interface Context {
+  params: Promise<{ postId: string }> | { postId: string };
+}
 
 export async function GET(
-  request: NextRequest,
-  { params }: RouteContext
+  req: Request,
+  context: Context
 ) {
-  const postId = params.postId;
-
-  if (!postId) {
-    return new NextResponse('Post ID is required', { status: 400 });
-  }
-
   try {
+    const { postId } = await context.params;
+    
     const comments = await prisma.comment.findMany({
       where: {
         postId,
@@ -53,29 +47,25 @@ export async function GET(
 }
 
 export async function POST(
-  request: NextRequest,
-  { params }: RouteContext
+  req: Request,
+  context: Context
 ) {
-  const postId = params.postId;
-
-  if (!postId) {
-    return new NextResponse('Post ID is required', { status: 400 });
-  }
-
   try {
     const { userId } = await auth();
-    const { content } = await request.json();
+    const { postId } = await context.params;
+    const { content } = await req.json();
 
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    if (!content) {
-      return new NextResponse('Content is required', { status: 400 });
-    }
-
     const userProfile = await prisma.userprofile.findUnique({
-      where: { userId }
+      where: { userId },
+      select: {
+        userId: true,
+        firstName: true,
+        lastName: true,
+      },
     });
 
     if (!userProfile) {
@@ -89,12 +79,7 @@ export async function POST(
         userId: userProfile.userId,
       },
       include: {
-        userprofile: {
-          select: {
-            firstName: true,
-            lastName: true,
-          },
-        },
+        userprofile: true,
       },
     });
 

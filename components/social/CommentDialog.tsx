@@ -1,3 +1,4 @@
+// components/social/CommentDialog.tsx
 'use client';
 
 import { useState } from 'react';

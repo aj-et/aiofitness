@@ -2,28 +2,40 @@ import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
 import AddFoodEntryForm from '@/components/forms/AddFoodEntryForm';
 import { CalendarDays } from "lucide-react";
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 
-async function getFoodEntries(userId: string) {
+async function getFoodEntries(userId: string, timezone = Intl.DateTimeFormat().resolvedOptions().timeZone) {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date()
+    const userDate = toZonedTime(now, timezone)
+    
+    const startOfDay = formatInTimeZone(
+      new Date(userDate.getFullYear(), userDate.getMonth(), userDate.getDate()),
+      timezone,
+      "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"
+    )
+    
+    const endOfDay = formatInTimeZone(
+      new Date(userDate.getFullYear(), userDate.getMonth(), userDate.getDate() + 1),
+      timezone,
+      "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"
+    )
     
     const foodEntries = await prisma.foodentry.findMany({
       where: {
         userId,
         createdAt: {
-          gte: today,
+          gte: startOfDay,
+          lt: endOfDay
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+      orderBy: { createdAt: 'desc' },
+    })
 
-    return foodEntries;
+    return foodEntries
   } catch (error) {
-    console.error('Error fetching food entries:', error);
-    throw error;
+    console.error('Error:', error)
+    throw error
   }
 }
 
@@ -108,7 +120,11 @@ export default async function NutritionPage() {
                         <td className="text-center py-4 px-4">{Math.round(entry.carbs)}g</td>
                         <td className="text-center py-4 px-4">{Math.round(entry.fat)}g</td>
                         <td className="text-right py-4 px-4">
-                          {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(entry.createdAt).toLocaleTimeString(undefined, { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: true 
+                          })}
                         </td>
                       </tr>
                     ))}

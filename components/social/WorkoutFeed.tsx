@@ -1,3 +1,4 @@
+// components/social/WorkoutFeed.tsx
 'use client';
 
 import { useEffect, useState } from 'react';

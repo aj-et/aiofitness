@@ -1,3 +1,4 @@
+// app/social/page.tsx
 'use client';
 
 import { useState } from 'react';

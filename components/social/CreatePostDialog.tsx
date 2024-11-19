@@ -1,3 +1,4 @@
+// components/social/CreatePostDialog.tsx
 'use client';
 
 import { useState } from 'react';
