@@ -2,18 +2,19 @@ import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-interface Context {
+// Define the correct type for Next.js route parameters
+type RouteContext = {
   params: {
     postId: string;
   };
-}
+};
 
 export async function GET(
   req: Request,
-  context: Context
+  { params }: RouteContext
 ) {
   try {
-    const { postId } = context.params;
+    const { postId } = params;
     const comments = await prisma.comment.findMany({
       where: {
         postId,
@@ -32,11 +33,11 @@ export async function GET(
 
 export async function POST(
   req: Request,
-  context: Context
+  { params }: RouteContext
 ) {
   try {
     const { userId } = await auth();
-    const { postId } = context.params;
+    const { postId } = params;
     const { content } = await req.json();
 
     if (!userId) {
