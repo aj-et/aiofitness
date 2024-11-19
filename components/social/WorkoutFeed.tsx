@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, Share2, MoreVertical, Loader2 } from 'lucide-react';
+import CommentDialog from './CommentDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,6 +119,56 @@ export default function WorkoutFeed({ type }: { type: 'following' | 'trending' }
     );
   }
 
+  const handleLike = async (postId: string) => {
+    setLikingPosts(prev => new Set(prev).add(postId));
+    
+    try {
+      const method = !posts.find(p => p.id === postId)?.hasLiked ? 'POST' : 'DELETE';
+      const response = await fetch('/api/posts/like', {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postId }),
+      });
+
+      if (!response.ok) throw new Error('Failed to like post');
+
+      setPosts(prev =>
+        prev.map(post =>
+          post.id === postId
+            ? {
+                ...post,
+                _count: {
+                  ...post._count,
+                  likes: post._count.likes + (method === 'POST' ? 1 : -1),
+                },
+                hasLiked: !post.hasLiked,
+              }
+            : post
+        )
+      );
+    } catch (error) {
+      console.error('Error liking post:', error);
+    } finally {
+      setLikingPosts(prev => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      });
+    }
+  };
+
+  const handleShare = async (postId: string) => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`);
+      alert('Link copied to clipboard!');
+    } catch (error) {
+      console.error('Error sharing post:', error);
+      alert('Failed to copy link');
+    }
+  };
+
   return (
     <div className="space-y-4">
       {posts.map((post) => (
@@ -138,7 +189,7 @@ export default function WorkoutFeed({ type }: { type: 'following' | 'trending' }
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -189,18 +240,30 @@ export default function WorkoutFeed({ type }: { type: 'following' | 'trending' }
                 variant="ghost"
                 size="sm"
                 className={`text-gray-600 ${post.hasLiked ? 'text-red-500 hover:text-red-600' : ''}`}
+                onClick={() => handleLike(post.id)}
                 disabled={likingPosts.has(post.id)}
               >
+                {likingPosts.has(post.id) ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
                 <Heart
                   className={`h-4 w-4 mr-2 ${post.hasLiked ? 'fill-current' : ''}`}
                 />
+              )}
                 {post._count.likes}
               </Button>
-              <Button variant="ghost" size="sm" className="text-gray-600">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                {post._count.comments}
-              </Button>
-              <Button variant="ghost" size="sm" className="text-gray-600">
+
+              <CommentDialog 
+                postId={post.id}
+                commentCount={post._count.comments}
+              />
+
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-600"
+                onClick={() => handleShare(post.id)}
+              >
                 <Share2 className="h-4 w-4 mr-2" />
                 Share
               </Button>

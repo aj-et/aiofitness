@@ -1,27 +1,27 @@
-// app/api/posts/[postId]/comments/route.ts
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-interface RouteParams {
+type RouteContext = {
   params: {
     postId: string;
   };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
+};
 
 export async function GET(
-  req: NextRequest,
-  context: RouteParams
+  request: NextRequest,
+  { params }: RouteContext
 ) {
+  const postId = params.postId;
+
+  if (!postId) {
+    return new NextResponse('Post ID is required', { status: 400 });
+  }
+
   try {
-    const { postId } = context.params;
     const comments = await prisma.comment.findMany({
       where: {
         postId,
-      },
-      orderBy: {
-        createdAt: 'desc',
       },
       include: {
         userprofile: {
@@ -31,15 +31,18 @@ export async function GET(
           },
         },
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    // Transform comments to include user information
     const transformedComments = comments.map(comment => ({
-      ...comment,
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
       user: {
         name: `${comment.userprofile.firstName} ${comment.userprofile.lastName}`,
       },
-      userprofile: undefined,
     }));
 
     return NextResponse.json(transformedComments);
@@ -50,19 +53,27 @@ export async function GET(
 }
 
 export async function POST(
-  req: NextRequest,
-  context: RouteParams
+  request: NextRequest,
+  { params }: RouteContext
 ) {
+  const postId = params.postId;
+
+  if (!postId) {
+    return new NextResponse('Post ID is required', { status: 400 });
+  }
+
   try {
     const { userId } = await auth();
-    const { postId } = context.params;
-    const { content } = await req.json();
+    const { content } = await request.json();
 
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // Find user profile
+    if (!content) {
+      return new NextResponse('Content is required', { status: 400 });
+    }
+
     const userProfile = await prisma.userprofile.findUnique({
       where: { userId }
     });
@@ -87,13 +98,13 @@ export async function POST(
       },
     });
 
-    // Transform the comment to include user information
     const transformedComment = {
-      ...comment,
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
       user: {
         name: `${comment.userprofile.firstName} ${comment.userprofile.lastName}`,
       },
-      userprofile: undefined,
     };
 
     return NextResponse.json(transformedComment);
