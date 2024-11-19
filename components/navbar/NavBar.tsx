@@ -5,7 +5,7 @@ import { Logo } from './logo';
 import { MobileMenu } from './mobile-menu';
 
 const navItems = [
-    // { label: 'Home', path: '/' },
+    { label: 'Home', path: '/' },
     { label: 'Nutrition', path: '/nutrition' },
     { label: 'Water', path: '/water' },
     { label: 'Workout', path: '/workout' },
