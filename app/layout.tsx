@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { ClerkProvider, UserButton } from '@clerk/nextjs'
+import { ClerkProvider } from '@clerk/nextjs'
+import NavBar from "@/components/layout/NavBar";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -31,7 +32,7 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <header>
-            {/* <UserButton /> */}
+            <NavBar />
           </header>
           <main>{children}</main>
         </body>
