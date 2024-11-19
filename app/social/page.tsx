@@ -5,12 +5,8 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CreatePostDialog from '@/components/social/CreatePostDialog';
 import WorkoutFeed from '@/components/social/WorkoutFeed';
-import { UserButton } from '@clerk/nextjs';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Dumbbell, Home, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 const navItems = [
  {
@@ -35,40 +31,7 @@ export default function SocialPage() {
 
  return (
    <div className="flex min-h-screen">
-     {/* Sidebar */}
-     <div className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 p-4">
-       <div className="mb-8">
-         <h1 className="text-2xl font-bold flex items-center gap-2">
-           <Dumbbell className="h-6 w-6" />
-           Workout App
-         </h1>
-       </div>
-
-       <nav className="space-y-2 flex-1">
-         {navItems.map((item) => {
-           const Icon = item.icon;
-           return (
-             <Link key={item.href} href={item.href}>
-               <Button
-                 variant="ghost"
-                 className={cn(
-                   'w-full justify-start',
-                   item.href === '/social' && 'bg-gray-100'
-                 )}
-               >
-                 <Icon className="mr-2 h-5 w-5" />
-                 {item.label}
-               </Button>
-             </Link>
-           );
-         })}
-       </nav>
-
-       <div className="pt-4 border-t">
-         <UserButton afterSignOutUrl="/" />
-       </div>
-     </div>
-
+     
      {/* Main content */}
      <main className="flex-1 bg-gray-50">
        <div className="max-w-2xl mx-auto px-4 py-8">

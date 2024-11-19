@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { content, workoutLogId } = body; // Changed from workout to workoutLogId
+    const { content, workoutLogId } = body; // Expect workoutLogId directly
 
     if (!content) {
       return new NextResponse('Content is required', { status: 400 });
@@ -27,19 +27,61 @@ export async function POST(req: Request) {
       return new NextResponse('User profile not found', { status: 404 });
     }
 
+    // If workoutLogId is provided, verify it exists and belongs to the user
+    if (workoutLogId) {
+      const workoutLog = await prisma.workoutlog.findFirst({
+        where: {
+          id: workoutLogId,
+          userId: userProfile.userId,
+        },
+      });
+
+      if (!workoutLog) {
+        return new NextResponse('Workout not found or unauthorized', { status: 404 });
+      }
+    }
+
+    // Create the post with the workoutLogId
     const post = await prisma.post.create({
       data: {
         content,
         userId: userProfile.userId,
-        workoutLogId: workoutLogId || undefined,
+        workoutLogId: workoutLogId || null, // Explicitly set to null if not provided
       },
       include: {
-        userprofile: true,
-        workoutlog: true,
+        userprofile: {
+          select: {
+            firstName: true,
+            lastName: true,
+            userId: true,
+          },
+        },
+        workoutlog: {
+          select: {
+            exercise: true,
+            sets: true,
+            reps: true,
+            weight: true,
+            notes: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(post);
+    // Transform the response to match the expected format
+    const transformedPost = {
+      id: post.id,
+      content: post.content,
+      userId: post.userId,
+      workoutlog: post.workoutlog,
+      user: {
+        id: post.userprofile.userId,
+        name: `${post.userprofile.firstName} ${post.userprofile.lastName}`,
+        imageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.userprofile.firstName}`,
+      },
+    };
+
+    return NextResponse.json(transformedPost);
   } catch (error) {
     console.error('Error creating post:', error);
     return new NextResponse('Internal Error', { status: 500 });
@@ -91,7 +133,15 @@ export async function GET(req: Request) {
               userId: true,
             },
           },
-          workoutlog: true,
+          workoutlog: {
+            select: {
+              exercise: true,
+              sets: true,
+              reps: true,
+              weight: true,
+              notes: true,
+            },
+          },
           _count: {
             select: {
               likes: true,
@@ -129,7 +179,15 @@ export async function GET(req: Request) {
               userId: true,
             },
           },
-          workoutlog: true,
+          workoutlog: {
+            select: {
+              exercise: true,
+              sets: true,
+              reps: true,
+              weight: true,
+              notes: true,
+            },
+          },
           _count: {
             select: {
               likes: true,
@@ -159,17 +217,20 @@ export async function GET(req: Request) {
       });
     }
 
-    // Transform the posts to include hasLiked
+    // Transform the posts to include hasLiked and format user data
     const transformedPosts = posts.map(post => ({
-      ...post,
+      id: post.id,
+      content: post.content,
+      createdAt: post.createdAt,
+      userId: post.userId,
       hasLiked: post.likes.length > 0,
-      likes: undefined, // Remove the likes array from the response
+      workoutlog: post.workoutlog, // Include workout data
+      _count: post._count,
       user: {
         id: post.userprofile.userId,
         name: `${post.userprofile.firstName} ${post.userprofile.lastName}`,
-        imageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.userprofile.firstName}`, // Placeholder avatar
-      },
-      userprofile: undefined, // Remove the userprofile from the response
+        imageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.userprofile.firstName}`,
+      }
     }));
 
     return NextResponse.json(transformedPosts);

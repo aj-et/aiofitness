@@ -31,7 +31,13 @@ interface Post {
     name: string;
     imageUrl: string;
   };
-  workoutlog?: Workout;
+  workoutlog?: {
+    exercise: string;
+    sets: number;
+    reps: number;
+    weight: number | null;
+    notes: string | null;
+  };
   _count: {
     likes: number;
     comments: number;
@@ -39,6 +45,43 @@ interface Post {
   hasLiked: boolean;
   createdAt: string;
 }
+
+const WorkoutDetails = ({ workout }: { workout: Post['workoutlog'] }) => {
+  if (!workout) return null;
+
+  return (
+    <Card className="bg-gray-50 mb-4">
+      <CardContent className="pt-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-gray-500">Exercise</p>
+            <p className="font-medium">{workout.exercise}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Weight</p>
+            <p className="font-medium">
+              {workout.weight ? `${workout.weight}kg` : 'No weight'}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Sets</p>
+            <p className="font-medium">{workout.sets}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Reps</p>
+            <p className="font-medium">{workout.reps}</p>
+          </div>
+          {workout.notes && (
+            <div className="col-span-2">
+              <p className="text-sm text-gray-500">Notes</p>
+              <p className="font-medium">{workout.notes}</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 function formatTimeAgo(dateString: string) {
   const now = new Date();
@@ -190,7 +233,7 @@ export default function WorkoutFeed({ type }: { type: 'following' | 'trending' }
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" >
+                  <Button variant="ghost" size="sm">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -203,38 +246,7 @@ export default function WorkoutFeed({ type }: { type: 'following' | 'trending' }
 
             <p className="text-gray-900 mb-4">{post.content}</p>
 
-            {post.workoutlog && (
-              <Card className="bg-gray-50 mb-4">
-                <CardContent className="pt-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Exercise</p>
-                      <p className="font-medium">{post.workoutlog.exercise}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Weight</p>
-                      <p className="font-medium">
-                        {post.workoutlog.weight ? `${post.workoutlog.weight}kg` : 'No weight'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Sets</p>
-                      <p className="font-medium">{post.workoutlog.sets}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Reps</p>
-                      <p className="font-medium">{post.workoutlog.reps}</p>
-                    </div>
-                    {post.workoutlog.notes && (
-                      <div className="col-span-2">
-                        <p className="text-sm text-gray-500">Notes</p>
-                        <p className="font-medium">{post.workoutlog.notes}</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {post.workoutlog && <WorkoutDetails workout={post.workoutlog} />}
 
             <div className="flex items-center gap-4">
               <Button
@@ -245,12 +257,12 @@ export default function WorkoutFeed({ type }: { type: 'following' | 'trending' }
                 disabled={likingPosts.has(post.id)}
               >
                 {likingPosts.has(post.id) ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Heart
-                  className={`h-4 w-4 mr-2 ${post.hasLiked ? 'fill-current' : ''}`}
-                />
-              )}
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Heart
+                    className={`h-4 w-4 mr-2 ${post.hasLiked ? 'fill-current' : ''}`}
+                  />
+                )}
                 {post._count.likes}
               </Button>
 
