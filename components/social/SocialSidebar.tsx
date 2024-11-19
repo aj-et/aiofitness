@@ -179,7 +179,7 @@ export default function SocialSidebar() {
                   </Link>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
-                  <Link href="/messages">
+                  <Link href="/social/messages">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Messages
                   </Link>
@@ -196,7 +196,7 @@ export default function SocialSidebar() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">Recommended Users</h3>
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/friends">
+              <Link href="/social/friends">
                 <Users className="h-4 w-4 mr-2" />
                 See All
               </Link>
