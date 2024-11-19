@@ -7,6 +7,7 @@ import { MobileMenu } from './mobile-menu';
 const navItems = [
     // { label: 'Home', path: '/' },
     { label: 'Nutrition', path: '/nutrition' },
+    { label: 'Water', path: '/water' },
     { label: 'Workout', path: '/workout' },
     { label: 'Social', path: '/social' },
     { label: 'Profile', path: '/profile' },
