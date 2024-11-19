@@ -2,12 +2,18 @@ import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+interface Context {
+  params: {
+    postId: string;
+  };
+}
+
 export async function GET(
   req: Request,
-  { params }: { params: { postId: string } }
+  context: Context
 ) {
   try {
-    const { postId } = params;
+    const { postId } = context.params;
     const comments = await prisma.comment.findMany({
       where: {
         postId,
@@ -26,11 +32,11 @@ export async function GET(
 
 export async function POST(
   req: Request,
-  { params }: { params: { postId: string } }
+  context: Context
 ) {
   try {
     const { userId } = await auth();
-    const { postId } = params;
+    const { postId } = context.params;
     const { content } = await req.json();
 
     if (!userId) {
