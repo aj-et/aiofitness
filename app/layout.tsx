@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ClerkProvider } from '@clerk/nextjs'
-import NavBar from "@/components/layout/NavBar";
+import { NavBar } from "@/components/navbar/NavBar";
 import "./globals.css";
 
 const geistSans = localFont({
