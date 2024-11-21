@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function PATCH(
@@ -100,13 +100,9 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-    req: Request,
-    { params }: { params: { programId: string } }
-  ) {
+  export async function DELETE(request: NextRequest) {
     try {
-      const params_ = await params;
-      const programId = params_.programId;
+      const programId = request.nextUrl.pathname.split('/').pop();
       const { userId } = await auth();
   
       if (!userId) {
@@ -125,4 +121,4 @@ export async function DELETE(
       console.error('Error deleting workout program:', error);
       return new NextResponse('Internal Error', { status: 500 });
     }
-}
+  }
