@@ -99,7 +99,7 @@ model workoutprogram {
   userId      String
   name        String
   description String?
-  exercises   ProgramExercise[] // New relation
+  exercises   programexercise[] // New relation
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   workoutlogs workoutlog[]
@@ -108,7 +108,7 @@ model workoutprogram {
   @@index([userId])
 }
 
-model ProgramExercise {
+model programexercise {
   id              String        @id @default(uuid())
   workoutProgramId String
   exerciseName    String
@@ -116,6 +116,7 @@ model ProgramExercise {
   reps            Int
   notes           String?
   order           Int          // For ordering exercises in the program
+  muscleGroup     String?
   workoutProgram  workoutprogram @relation(fields: [workoutProgramId], references: [id], onDelete: Cascade)
 
   @@index([workoutProgramId])
