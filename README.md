@@ -19,8 +19,8 @@ AIO Fitness (All-in-One Fitness) is a web application designed to help users tra
 
 - **Framework**: [Next.js](https://nextjs.org/) with TypeScript
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Database**: Connected to a backend database
-- **Version Control**: GitHub
+- **Database**: [PostgreSQL](https://vercel.com/docs/storage/vercel-postgres)
+- **Version Control**: [GitHub](https://github.com/aj-et/aiofitness)
 
 ## Installation
 
@@ -53,15 +53,11 @@ AIO Fitness (All-in-One Fitness) is a web application designed to help users tra
 ```
 aiofitness/
 ├── public/        # Static assets
-├── src/
-│   ├── components/    # Reusable UI components
-│   ├── pages/        # Application routes
-│   ├── styles/       # Global and component-specific styles
-│   ├── utils/        # Utility functions and helpers
-│   ├── hooks/        # Custom React hooks
-│   ├── services/     # API and database services
-├── .env.local    # Environment variables
-├── package.json  # Project metadata and dependencies
+├── app/           # Web page routes
+├── components/    # Reusable UI components
+├── prisma/        # Database schema and migrations
+├── types/         # Types for typescript
+├── package.json   # Project metadata and dependencies
 ```
 
 ## Contributing
