@@ -2,6 +2,13 @@
 
 AIO Fitness (All-in-One Fitness) is a web application designed to help users track their fitness journey. It combines workout tracking, calorie and water intake monitoring, and social features for sharing workouts and progress. This project is built using Next.js and TypeScript and is connected to a database for persistent data storage.
 
+## Testing
+For testing without needing to register your email, use this account:
+    ```bash
+    username: admin
+    password: password
+    ```
+
 ## Features
 
 - **Navigation Bar**: Access various sections of the app, including:
