@@ -77,22 +77,6 @@ model projects {
   github_link String @db.VarChar(256)
 }
 
-model workoutprogram {
-  id          String    @id @default(uuid())
-  userId      String
-  name        String
-  description String?
-  isPublic    Boolean   @default(false)  // New field
-  exercises   Json[]    // Store exercise details
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  userprofile userprofile @relation(fields: [userId], references: [userId])
-  likes       Int       @default(0)      // Track program popularity
-
-  @@index([userId])
-  @@index([isPublic])
-}
-
 model workoutlog {
   id              String         @id @default(uuid())
   userId          String
@@ -105,8 +89,36 @@ model workoutlog {
   createdAt       DateTime       @default(now())
   userprofile     userprofile    @relation(fields: [userId], references: [userId])
   post            post[]
+  workoutprogram  workoutprogram[]
 
   @@index([userId])
+}
+
+model workoutprogram {
+  id          String        @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  exercises   ProgramExercise[] // New relation
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  workoutlogs workoutlog[]
+  userprofile userprofile   @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+}
+
+model ProgramExercise {
+  id              String        @id @default(uuid())
+  workoutProgramId String
+  exerciseName    String
+  sets            Int
+  reps            Int
+  notes           String?
+  order           Int          // For ordering exercises in the program
+  workoutProgram  workoutprogram @relation(fields: [workoutProgramId], references: [id], onDelete: Cascade)
+
+  @@index([workoutProgramId])
 }
 
 model post {

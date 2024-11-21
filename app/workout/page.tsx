@@ -1,3 +1,4 @@
+// app/workout/page.tsx
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
 import { Dumbbell } from "lucide-react";
@@ -11,31 +12,71 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { WorkoutLog, WorkoutProgram, ProgramExercise } from '@/types/program';
 
 async function getWorkoutData(userId: string) {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const todaysWorkouts = await prisma.workoutlog.findMany({
-      where: {
-        userId,
-        createdAt: {
-          gte: today,
+    const [todaysWorkouts, workoutPrograms] = await Promise.all([
+      prisma.workoutlog.findMany({
+        where: {
+          userId,
+          createdAt: {
+            gte: today,
+          },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.workoutprogram.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          exercises: {
+            orderBy: {
+              order: 'asc',
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
+
+    // Transform the workout programs to match the WorkoutProgram type
+    const transformedPrograms: WorkoutProgram[] = workoutPrograms.map(program => ({
+      id: program.id,
+      userId: program.userId,
+      name: program.name,
+      description: program.description,
+      createdAt: program.createdAt,
+      updatedAt: program.updatedAt,
+      exercises: program.exercises.map(exercise => ({
+        id: exercise.id,
+        exerciseName: exercise.exerciseName,
+        sets: exercise.sets,
+        reps: exercise.reps,
+        notes: exercise.notes,
+        order: exercise.order,
+        workoutProgramId: exercise.workoutProgramId,
+        muscleGroup: null // Set default value since it's required by ProgramExercise type
+      }))
+    }));
 
     return {
-      todaysWorkouts,
+      todaysWorkouts: todaysWorkouts as WorkoutLog[],
+      workoutPrograms: transformedPrograms,
     };
   } catch (error) {
     console.error('Error fetching workout data:', error);
     return {
-      todaysWorkouts: [],
+      todaysWorkouts: [] as WorkoutLog[],
+      workoutPrograms: [] as WorkoutProgram[],
     };
   }
 }
@@ -51,7 +92,7 @@ export default async function WorkoutPage() {
     );
   }
 
-  const { todaysWorkouts } = await getWorkoutData(userId);
+  const { todaysWorkouts, workoutPrograms } = await getWorkoutData(userId);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -153,7 +194,7 @@ export default async function WorkoutPage() {
           </TabsContent>
 
           <TabsContent value="programs">
-            <WorkoutProgramList programs={[]} />
+            <WorkoutProgramList programs={workoutPrograms} />
           </TabsContent>
         </Tabs>
       </div>
