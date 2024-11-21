@@ -101,28 +101,28 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: Request,
-  context: { params: { programId: string } }
-) {
-  try {
-    const params = await context.params;
-    const programId = params.programId;
-    const { userId } = await auth();
-
-    if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    req: Request,
+    { params }: { params: { programId: string } }
+  ) {
+    try {
+      const params_ = await params;
+      const programId = params_.programId;
+      const { userId } = await auth();
+  
+      if (!userId) {
+        return new NextResponse('Unauthorized', { status: 401 });
+      }
+  
+      await prisma.workoutprogram.delete({
+        where: {
+          id: programId,
+          userId,
+        },
+      });
+  
+      return new NextResponse(null, { status: 204 });
+    } catch (error) {
+      console.error('Error deleting workout program:', error);
+      return new NextResponse('Internal Error', { status: 500 });
     }
-
-    await prisma.workoutprogram.delete({
-      where: {
-        id: programId,
-        userId,
-      },
-    });
-
-    return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    console.error('Error deleting workout program:', error);
-    return new NextResponse('Internal Error', { status: 500 });
-  }
 }
