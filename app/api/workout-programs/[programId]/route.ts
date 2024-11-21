@@ -4,10 +4,11 @@ import prisma from '@/lib/prisma';
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { programId: string } }
+  context: { params: { programId: string } }
 ) {
   try {
-    const { programId } = await params;
+    const params = await context.params;
+    const programId = params.programId;
     const { userId } = await auth();
 
     if (!userId) {
@@ -101,10 +102,11 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { programId: string } }
+  context: { params: { programId: string } }
 ) {
   try {
-    const { programId } = await params;
+    const params = await context.params;
+    const programId = params.programId;
     const { userId } = await auth();
 
     if (!userId) {
