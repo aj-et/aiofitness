@@ -1,7 +1,7 @@
 // app/social/friends/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,8 +12,7 @@ import {
   UserMinus, 
   UserPlus, 
   Search, 
-  Loader2, 
-  MessageSquare 
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -31,48 +30,64 @@ export default function FriendsPage() {
   const [followers, setFollowers] = useState<User[]>([]);
   const [following, setFollowing] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchUsers();
-  }, [activeTab]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
       const response = await fetch(`/api/users/${activeTab}`);
+      
       if (!response.ok) {
-        console.error(`Error fetching users: ${response.status} - ${response.statusText}`);
-        throw new Error('Failed to fetch users');
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch ${activeTab}: ${errorText}`);
       }
+      
       const data = await response.json();
-      console.log(`Fetched ${activeTab} data:`, data); // Debugging log
+      
       if (activeTab === 'followers') {
         setFollowers(data);
       } else {
         setFollowing(data);
       }
-    } catch (error) {
-      console.error('Error fetching users:', error);
+    } catch (err) {
+      console.error('Fetch error:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      // Set empty array to prevent UI from breaking
+      activeTab === 'followers' ? setFollowers([]) : setFollowing([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleFollow = async (userId: string) => {
     setProcessingIds(prev => new Set(prev).add(userId));
     try {
-      const method = following.some(f => f.userId === userId) ? 'DELETE' : 'POST';
+      const isCurrentlyFollowing = following.some(f => f.userId === userId);
+      const method = isCurrentlyFollowing ? 'DELETE' : 'POST';
+      
       const response = await fetch('/api/users/follow', {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
       });
 
-      if (!response.ok) throw new Error('Failed to update follow status');
-      fetchUsers();
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update follow status: ${errorText}`);
+      }
+      
+      // Refresh users after successful follow/unfollow
+      await fetchUsers();
     } catch (error) {
       console.error('Error updating follow status:', error);
+      // Optional: Add user-friendly error toast/notification
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev);
@@ -201,15 +216,6 @@ function UserListItem({
         </div>
       </div>
       <div className="flex gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          asChild
-        >
-          <Link href={`/social/messages/${user.userId}`}>
-            <MessageSquare className="h-4 w-4" />
-          </Link>
-        </Button>
         <Button
           variant={user.isFollowing ? "secondary" : "outline"}
           size="sm"
