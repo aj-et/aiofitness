@@ -3,12 +3,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function PATCH(
-  req: Request,
-  context: { params: { programId: string } }
+  req: NextRequest,
 ) {
   try {
-    const params = await context.params;
-    const programId = params.programId;
+    const programId = req.nextUrl.pathname.split('/').pop();
     const { userId } = await auth();
 
     if (!userId) {
@@ -100,9 +98,11 @@ export async function PATCH(
   }
 }
 
-  export async function DELETE(request: NextRequest) {
+export async function DELETE(
+    req: NextRequest
+) {
     try {
-      const programId = request.nextUrl.pathname.split('/').pop();
+      const programId = req.nextUrl.pathname.split('/').pop();
       const { userId } = await auth();
   
       if (!userId) {
@@ -121,4 +121,4 @@ export async function PATCH(
       console.error('Error deleting workout program:', error);
       return new NextResponse('Internal Error', { status: 500 });
     }
-  }
+}
