@@ -4,7 +4,7 @@ AIO Fitness (All-in-One Fitness) is a web application designed to help users tra
 
 ## Testing
 For testing without needing to register your email, use this account:
-    ```bash
+    ```
     username: admin
     password: password
     ```
