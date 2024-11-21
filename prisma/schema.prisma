@@ -21,20 +21,6 @@ model foodentry {
   @@index([userId])
 }
 
-model message {
-  id         String      @id @default(uuid())
-  content    String      @db.Text
-  timestamp  DateTime    @default(now())
-  read       Boolean     @default(false)
-  senderId   String
-  receiverId String
-  sender     userprofile @relation("SentMessages", fields: [senderId], references: [userId])
-  receiver   userprofile @relation("ReceivedMessages", fields: [receiverId], references: [userId])
-
-  @@index([senderId])
-  @@index([receiverId])
-}
-
 model userprofile {
   id            String      @id @default(uuid())
   userId        String      @unique
@@ -56,8 +42,6 @@ model userprofile {
   comments      comment[]
   followers     follow[]    @relation("Following")
   following     follow[]    @relation("Follower")
-  sentMessages     message[] @relation("SentMessages")
-  receivedMessages message[] @relation("ReceivedMessages")
 
   @@index([userId])
 }
@@ -94,34 +78,35 @@ model projects {
 }
 
 model workoutprogram {
-  id          String        @id @default(uuid())
+  id          String    @id @default(uuid())
   userId      String
   name        String
   description String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  workoutlogs workoutlog[]
-  userprofile userprofile   @relation(fields: [userId], references: [userId])
+  isPublic    Boolean   @default(false)  // New field
+  exercises   Json[]    // Store exercise details
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userprofile userprofile @relation(fields: [userId], references: [userId])
+  likes       Int       @default(0)      // Track program popularity
 
   @@index([userId])
+  @@index([isPublic])
 }
 
 model workoutlog {
   id              String         @id @default(uuid())
   userId          String
-  workoutProgramId String?
   exercise        String
   sets            Int
   reps            Int
   weight          Float?
-  notes           String?
+  muscleGroup     String?        // Optional field
+  notes           String?        // Optional field
   createdAt       DateTime       @default(now())
   userprofile     userprofile    @relation(fields: [userId], references: [userId])
-  workoutprogram  workoutprogram? @relation(fields: [workoutProgramId], references: [id])
-  post post[]
+  post            post[]
 
   @@index([userId])
-  @@index([workoutProgramId])
 }
 
 model post {

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Exercise } from '@/types/exercise';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -13,92 +13,83 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import ExerciseSearch from '../ExerciseSearch';
 import { useRouter } from 'next/navigation';
-
-interface WorkoutProgram {
-  id: string;
-  name: string;
-}
-
-interface Props {
-  programs: WorkoutProgram[];
-}
+import { muscleGroups } from '@/types/exercise';
 
 interface FormData {
   exercise: string;
-  sets: string;
-  reps: string;
-  weight: string;
-  workoutProgramId: string | null;
-  notes: string;
+  sets: number;
+  reps: number;
+  weight?: number;
+  muscleGroup: string;
+  notes?: string;
 }
 
-export default function AddWorkoutLog({ programs }: Props) {
+export default function AddWorkoutLog() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     exercise: '',
-    sets: '',
-    reps: '',
-    weight: '',
-    workoutProgramId: null,
+    sets: 1,
+    reps: 1,
+    muscleGroup: '',
+    weight: undefined,
     notes: '',
   });
 
-  const handleChange = (name: keyof FormData) => (
-    e: React.ChangeEvent<HTMLInputElement> | string
-  ) => {
-    const value = typeof e === 'string' ? e : e.target.value;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleProgramChange = (value: string | null) => {
+  const handleExerciseSelect = (exercise: Exercise) => {
     setFormData(prev => ({
       ...prev,
-      workoutProgramId: value
+      exercise: exercise.name,
+      muscleGroup: exercise.muscle,
+      notes: '',
+    }));
+    setShowSearch(false);
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'sets' || name === 'reps' || name === 'weight'
+        ? parseFloat(value) || 0
+        : value,
     }));
   };
 
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
       const response = await fetch('/api/workout-logs', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          exercise: formData.exercise,
-          sets: parseInt(formData.sets),
-          reps: parseInt(formData.reps),
-          weight: formData.weight ? parseFloat(formData.weight) : null,
-          workoutProgramId: formData.workoutProgramId,
-          notes: formData.notes || null,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to add workout log');
+        throw new Error('Failed to log workout');
       }
 
       setFormData({
         exercise: '',
-        sets: '',
-        reps: '',
-        weight: '',
-        workoutProgramId: null,
+        sets: 1,
+        reps: 1,
+        muscleGroup: '',
+        weight: undefined,
         notes: '',
       });
       
       router.refresh();
     } catch (error) {
-      console.error('Error adding workout log:', error);
-      alert('Failed to add workout log');
+      console.error('Error logging workout:', error);
+      alert('Failed to log workout');
     } finally {
       setIsLoading(false);
     }
@@ -107,94 +98,102 @@ export default function AddWorkoutLog({ programs }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Log Exercise</CardTitle>
+        <CardTitle>Log Workout</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Exercise Name</label>
-            <Input
-              required
-              value={formData.exercise}
-              onChange={handleChange('exercise')}
-              placeholder="e.g., Bench Press"
-            />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Exercise</label>
+            <div className="flex gap-2">
+              <Input
+                name="exercise"
+                value={formData.exercise}
+                onChange={handleChange}
+                placeholder="Exercise name"
+                required
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowSearch(!showSearch)}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+          {showSearch && (
+            <ExerciseSearch onSelectExercise={handleExerciseSelect} />
+          )}
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
               <label className="text-sm font-medium">Sets</label>
               <Input
-                required
                 type="number"
+                name="sets"
                 value={formData.sets}
-                onChange={handleChange('sets')}
-                placeholder="e.g., 3"
-                min="1"
+                onChange={handleChange}
+                min={1}
+                required
               />
             </div>
-
-            <div className="space-y-2">
+            <div>
               <label className="text-sm font-medium">Reps</label>
               <Input
-                required
                 type="number"
+                name="reps"
                 value={formData.reps}
-                onChange={handleChange('reps')}
-                placeholder="e.g., 10"
-                min="1"
+                onChange={handleChange}
+                min={1}
+                required
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Weight (kg)</label>
+            <div>
+              <label className="text-sm font-medium">Weight (lbs)</label>
               <Input
                 type="number"
+                name="weight"
+                value={formData.weight || ''}
+                onChange={handleChange}
+                min={0}
                 step="0.5"
-                value={formData.weight}
-                onChange={handleChange('weight')}
-                placeholder="e.g., 60"
               />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Program</label>
-              <Select
-                value={formData.workoutProgramId || undefined}
-                onValueChange={handleProgramChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a program" />
-                </SelectTrigger>
-                <SelectContent>
-                  {programs.map((program) => (
-                    <SelectItem key={program.id} value={program.id}>
-                      {program.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div>
+            <label className="text-sm font-medium">Muscle Group</label>
+            <Select 
+              value={formData.muscleGroup} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, muscleGroup: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select muscle group" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(muscleGroups).map(([groupKey, group]) => (
+                  <SelectItem key={groupKey} value={groupKey}>
+                    {group.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
             <label className="text-sm font-medium">Notes</label>
-            <Input
-              value={formData.notes}
-              onChange={handleChange('notes')}
-              placeholder="Any additional notes..."
+            <Textarea
+              name="notes"
+              value={formData.notes || ''}
+              onChange={handleChange}
+              placeholder="Add any notes about your workout..."
+              rows={3}
             />
           </div>
 
-          <Button 
-            type="submit" 
-            disabled={isLoading}
-            className="w-full"
-          >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Log Exercise
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Logging...' : 'Log Workout'}
           </Button>
         </form>
       </CardContent>

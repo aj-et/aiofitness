@@ -1,10 +1,9 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
-import { Dumbbell, Plus } from "lucide-react";
-import { Button } from '@/components/ui/button';
+import { Dumbbell } from "lucide-react";
 import AddWorkoutLog from '@/components/forms/AddWorkoutLog';
 import WorkoutProgramList from '@/components/WorkoutProgramList';
-import CreateProgramDialog from '@/components/CreateProgramDialog';
+import ExercisesBrowser from '@/components/ExercisesBrowser';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Tabs,
@@ -18,40 +17,25 @@ async function getWorkoutData(userId: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const [todaysWorkouts, workoutPrograms] = await Promise.all([
-      prisma.workoutlog.findMany({
-        where: {
-          userId,
-          createdAt: {
-            gte: today,
-          },
+    const todaysWorkouts = await prisma.workoutlog.findMany({
+      where: {
+        userId,
+        createdAt: {
+          gte: today,
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        include: {
-          workoutprogram: true,
-        },
-      }),
-      prisma.workoutprogram.findMany({
-        where: {
-          userId,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      }),
-    ]);
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
     return {
       todaysWorkouts,
-      workoutPrograms,
     };
   } catch (error) {
     console.error('Error fetching workout data:', error);
     return {
       todaysWorkouts: [],
-      workoutPrograms: [],
     };
   }
 }
@@ -67,29 +51,27 @@ export default async function WorkoutPage() {
     );
   }
 
-  const { todaysWorkouts, workoutPrograms } = await getWorkoutData(userId);
+  const { todaysWorkouts } = await getWorkoutData(userId);
 
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Workout Tracker</h1>
-            <p className="text-gray-600">Track your exercises and workout programs</p>
-          </div>
-          <CreateProgramDialog />
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Workout Tracker</h1>
+          <p className="text-gray-600">Track your exercises and workout programs</p>
         </div>
 
         <Tabs defaultValue="log" className="space-y-6">
           <TabsList>
             <TabsTrigger value="log">Workout Log</TabsTrigger>
+            <TabsTrigger value="exercises">Exercises</TabsTrigger>
             <TabsTrigger value="programs">Programs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="log" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <AddWorkoutLog programs={workoutPrograms} />
+                <AddWorkoutLog />
               </div>
 
               <Card>
@@ -131,8 +113,8 @@ export default async function WorkoutPage() {
                           <th className="text-left py-3 px-4">Exercise</th>
                           <th className="text-center py-3 px-4">Sets</th>
                           <th className="text-center py-3 px-4">Reps</th>
-                          <th className="text-center py-3 px-4">Weight</th>
-                          <th className="text-left py-3 px-4">Program</th>
+                          <th className="text-center py-3 px-4">Weight (lbs)</th>
+                          <th className="text-left py-3 px-4">Muscle Group</th>
                           <th className="text-right py-3 px-4">Time</th>
                         </tr>
                       </thead>
@@ -143,10 +125,10 @@ export default async function WorkoutPage() {
                             <td className="text-center py-4 px-4">{log.sets}</td>
                             <td className="text-center py-4 px-4">{log.reps}</td>
                             <td className="text-center py-4 px-4">
-                              {log.weight ? `${log.weight}kg` : '-'}
+                              {log.weight ? `${log.weight}lbs` : '-'}
                             </td>
                             <td className="py-4 px-4">
-                              {log.workoutprogram?.name || '-'}
+                              {log.muscleGroup || '-'}
                             </td>
                             <td className="text-right py-4 px-4">
                               {new Date(log.createdAt).toLocaleTimeString([], {
@@ -166,8 +148,12 @@ export default async function WorkoutPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="exercises">
+            <ExercisesBrowser />
+          </TabsContent>
+
           <TabsContent value="programs">
-            <WorkoutProgramList programs={workoutPrograms} />
+            <WorkoutProgramList programs={[]} />
           </TabsContent>
         </Tabs>
       </div>
