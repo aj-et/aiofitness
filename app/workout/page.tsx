@@ -19,7 +19,7 @@ async function getWorkoutData(userId: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const [todaysWorkouts, workoutPrograms] = await Promise.all([
+    const [todaysWorkouts, workoutPrograms, publicPrograms] = await Promise.all([
       prisma.workoutlog.findMany({
         where: {
           userId,
@@ -46,37 +46,37 @@ async function getWorkoutData(userId: string) {
           createdAt: 'desc',
         },
       }),
+      prisma.workoutprogram.findMany({
+        where: {
+          isPublic: true,
+          NOT: {
+            userId,
+          },
+        },
+        include: {
+          exercises: {
+            orderBy: {
+              order: 'asc',
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
     ]);
-
-    // Transform the workout programs to match the WorkoutProgram type
-    const transformedPrograms: WorkoutProgram[] = workoutPrograms.map(program => ({
-      id: program.id,
-      userId: program.userId,
-      name: program.name,
-      description: program.description,
-      createdAt: program.createdAt,
-      updatedAt: program.updatedAt,
-      exercises: program.exercises.map(exercise => ({
-        id: exercise.id,
-        exerciseName: exercise.exerciseName,
-        sets: exercise.sets,
-        reps: exercise.reps,
-        notes: exercise.notes,
-        order: exercise.order,
-        workoutProgramId: exercise.workoutProgramId,
-        muscleGroup: null // Set default value since it's required by ProgramExercise type
-      }))
-    }));
 
     return {
       todaysWorkouts: todaysWorkouts as WorkoutLog[],
-      workoutPrograms: transformedPrograms,
+      workoutPrograms: workoutPrograms as WorkoutProgram[],
+      publicPrograms: publicPrograms as WorkoutProgram[],
     };
   } catch (error) {
     console.error('Error fetching workout data:', error);
     return {
       todaysWorkouts: [] as WorkoutLog[],
       workoutPrograms: [] as WorkoutProgram[],
+      publicPrograms: [] as WorkoutProgram[],
     };
   }
 }
@@ -92,7 +92,7 @@ export default async function WorkoutPage() {
     );
   }
 
-  const { todaysWorkouts, workoutPrograms } = await getWorkoutData(userId);
+  const { todaysWorkouts, workoutPrograms, publicPrograms } = await getWorkoutData(userId);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -194,7 +194,10 @@ export default async function WorkoutPage() {
           </TabsContent>
 
           <TabsContent value="programs">
-            <WorkoutProgramList programs={workoutPrograms} />
+            <WorkoutProgramList
+              programs={workoutPrograms}
+              publicPrograms={publicPrograms}
+            />
           </TabsContent>
         </Tabs>
       </div>

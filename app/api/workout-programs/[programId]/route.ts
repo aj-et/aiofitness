@@ -1,3 +1,4 @@
+// app/api/workout-programs/[programId]/route.ts
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse, type NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
@@ -14,6 +15,33 @@ export async function PATCH(
     }
 
     const body = await req.json();
+
+    // Check if this is a simple field update
+    if ('isPublic' in body && Object.keys(body).length === 1) {
+      console.log('Updating visibility for program:', programId);
+      console.log('New visibility value:', body.isPublic);
+      
+      const updatedProgram = await prisma.workoutprogram.update({
+        where: {
+          id: programId,
+          userId,
+        },
+        data: {
+          isPublic: body.isPublic,
+        },
+        include: {
+          exercises: {
+            orderBy: {
+              order: 'asc',
+            },
+          },
+        },
+      });
+      
+      console.log('Updated program:', updatedProgram);
+      return NextResponse.json(updatedProgram);
+    }
+
     const { name, description, exercises } = body;
 
     // Get existing exercises to determine which ones to delete

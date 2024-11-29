@@ -31,10 +31,13 @@ export interface WorkoutLog {
     exercises: ProgramExercise[];
     createdAt: Date;
     updatedAt?: Date;
+    isPublic: boolean;
+    authorName?: string;
   }
   
   export interface CreateWorkoutProgram {
     name: string;
     description: string | null;  // Changed from string | undefined
     exercises: Omit<ProgramExercise, 'id' | 'workoutProgramId'>[];
+    isPublic?: boolean;
   }

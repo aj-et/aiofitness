@@ -99,6 +99,7 @@ model workoutprogram {
   userId      String
   name        String
   description String?
+  isPublic    Boolean       @default(false)
   exercises   programexercise[] // New relation
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt

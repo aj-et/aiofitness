@@ -2,7 +2,22 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Dumbbell, Play, CheckCircle2, MoreVertical, Pencil, Trash2, Plus, Search, GripVertical, X } from 'lucide-react';
+import { 
+  Calendar,
+  Dumbbell,
+  Play,
+  CheckCircle2,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Plus,
+  Search,
+  GripVertical,
+  X,
+  Share2,
+  Lock,
+  Globe,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,13 +35,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import {
   Popover,
   PopoverContent,
@@ -43,6 +57,7 @@ import { useRouter } from 'next/navigation';
 
 interface WorkoutProgramListProps {
   programs: WorkoutProgram[];
+  publicPrograms: WorkoutProgram[];
 }
 
 interface ExecutionExercise extends ProgramExercise {
@@ -52,7 +67,7 @@ interface ExecutionExercise extends ProgramExercise {
   actualWeight?: number;
 }
 
-export default function WorkoutProgramList({ programs }: WorkoutProgramListProps) {
+export default function WorkoutProgramList({ programs, publicPrograms }: WorkoutProgramListProps) {
   const router = useRouter();
   const [executingProgram, setExecutingProgram] = useState<WorkoutProgram | null>(null);
   const [editingProgram, setEditingProgram] = useState<WorkoutProgram | null>(null);
@@ -261,101 +276,256 @@ export default function WorkoutProgramList({ programs }: WorkoutProgramListProps
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-end">
-        <CreateProgramDialog />
-      </div>
+  const toggleProgramVisibility = async (program: WorkoutProgram) => {
+    setIsLoading(true);
+    try {
+      console.log('Current visibility:', program.isPublic);
+      console.log('Updating to:', !program.isPublic);
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {programs.length > 0 ? (
-          programs.map((program) => (
-            <motion.div
-              key={program.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Dumbbell className="h-5 w-5" />
-                      {program.name}
-                    </span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditingProgram(program)}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => setDeletingProgram(program)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 mb-4">
-                    {program.description || 'No description provided'}
-                  </p>
-                  
-                  {program.exercises && program.exercises.length > 0 && (
-                    <div className="mt-4">
-                      <p className="font-medium mb-2">Exercises:</p>
-                      <ul className="list-disc list-inside text-sm text-gray-600">
-                        {program.exercises.map((exercise, index) => (
-                          <li key={index} className="mb-1">
-                            {exercise.exerciseName} ({exercise.sets} sets x {exercise.reps} reps)
-                            {exercise.notes && (
-                              <span className="block ml-5 text-gray-500 text-xs">
-                                Note: {exercise.notes}
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(program.createdAt).toLocaleDateString()}
-                    </span>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleStartProgram(program)}
-                      className="flex items-center"
-                    >
-                      <Play className="h-4 w-4 mr-1" />
-                      Start Workout
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))
-        ) : (
-          <div className="col-span-full text-center py-12">
-            <p className="text-gray-600">No workout programs created yet</p>
-            <p className="text-sm text-gray-500 mt-2">
-              Click the "New Program" button to create your first workout program
-            </p>
+      const response = await fetch(`/api/workout-programs/${program.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isPublic: !program.isPublic,
+        }),
+      });
+  
+      const data = await response.json();
+      console.log('Response data:', data);
+    
+      if (!response.ok) {
+        throw new Error('Failed to update program visibility');
+      }
+      
+      router.refresh();
+    } catch (error) {
+      console.error('Error updating program visibility:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const copyPublicProgram = async (program: WorkoutProgram) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/workout-programs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${program.name} (Copy)`,
+          description: program.description,
+          exercises: program.exercises,
+          isPublic: false,
+        }),
+      });
+  
+      if (!response.ok) throw new Error('Failed to copy program');
+      router.refresh();
+    } catch (error) {
+      console.error('Error copying program:', error);
+      alert('Failed to copy program');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div>
+    <Tabs defaultValue="my-programs" className="space-y-6">
+      <TabsList>
+        <TabsTrigger value="my-programs">My Programs</TabsTrigger>
+        <TabsTrigger value="public-programs">Public Programs</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="my-programs">
+        <div className="space-y-6">
+          <div className="flex justify-end">
+            <CreateProgramDialog />
           </div>
-        )}
-      </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {programs.length > 0 ? (
+              programs.map((program) => (
+                <motion.div
+                  key={program.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <Dumbbell className="h-5 w-5" />
+                          {program.name}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {program.isPublic ? (
+                            <Globe className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Lock className="h-4 w-4" />
+                          )}
+                          <Switch
+                            checked={program.isPublic}
+                            onCheckedChange={() => toggleProgramVisibility(program)}
+                            disabled={isLoading}
+                          />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setEditingProgram(program)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => setDeletingProgram(program)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-600 mb-4">
+                        {program.description || 'No description provided'}
+                      </p>
+                      
+                      {program.exercises && program.exercises.length > 0 && (
+                        <div className="mt-4">
+                          <p className="font-medium mb-2">Exercises:</p>
+                          <ul className="list-disc list-inside text-sm text-gray-600">
+                            {program.exercises.map((exercise, index) => (
+                              <li key={index} className="mb-1">
+                                {exercise.exerciseName} ({exercise.sets} sets x {exercise.reps} reps)
+                                {exercise.notes && (
+                                  <span className="block ml-5 text-gray-500 text-xs">
+                                    Note: {exercise.notes}
+                                  </span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(program.createdAt).toLocaleDateString()}
+                        </span>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleStartProgram(program)}
+                          className="flex items-center"
+                        >
+                          <Play className="h-4 w-4 mr-1" />
+                          Start Workout
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-gray-600">No programs created yet</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Click the "New Program" button to create your first program
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="public-programs">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {publicPrograms?.length > 0 ? (
+            publicPrograms.map((program) => (
+              <motion.div
+                key={program.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <Dumbbell className="h-5 w-5" />
+                        {program.name}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyPublicProgram(program)}
+                        disabled={isLoading}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add to My Programs
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4">
+                      {program.description || 'No description provided'}
+                    </p>
+                    
+                    {program.exercises && program.exercises.length > 0 && (
+                      <div className="mt-4">
+                        <p className="font-medium mb-2">Exercises:</p>
+                        <ul className="list-disc list-inside text-sm text-gray-600">
+                          {program.exercises.map((exercise, index) => (
+                            <li key={index} className="mb-1">
+                              {exercise.exerciseName} ({exercise.sets} sets x {exercise.reps} reps)
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(program.createdAt).toLocaleDateString()}
+                        <span className="text-gray-500">
+                          by {program.authorName || 'Unknown'}
+                        </span>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleStartProgram(program)}
+                      >
+                        <Play className="h-4 w-4 mr-1" />
+                        Start Workout
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <p className="text-gray-600">No public programs available</p>
+            </div>
+          )}
+        </div>
+      </TabsContent>
+    </Tabs>
 
       {/* Edit Program Dialog */}
       <Dialog open={!!editingProgram} onOpenChange={(open) => !open && setEditingProgram(null)}>
