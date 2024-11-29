@@ -43,7 +43,8 @@ interface ProgramState extends Omit<WorkoutProgram, 'id' | 'createdAt' | 'userId
 const initialProgram: ProgramState = {
   name: '',
   description: null,  // Changed from empty string
-  exercises: []
+  exercises: [],
+  isPublic: false
 };
 
 
