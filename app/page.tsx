@@ -1,12 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
-import { 
-  Activity, 
-  Flame, 
-  GlassWater,
-  Scale,
-} from "lucide-react";
-
 import ProgressCard from '@/components/cards/ProgressCard';
 import NutritionSummary from '@/components/cards/NutritionSummary';
 import WeeklyCaloriesChart from '@/components/cards/WeeklyCaloriesChart';
@@ -79,20 +72,27 @@ interface formatWeeklyDataProps {
 
 // Format weekly data for chart
 function formatWeeklyData(entries: formatWeeklyDataProps[]) {
-  const dailyData = {};
+  const dailyData: { [key: string]: { calories: number } } = {};
   
+  // Initialize all days of the week
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const day = date.toLocaleDateString('en-US', { weekday: 'short' });
+    dailyData[day] = { calories: 0 };
+  }
+
+  // Sum up calories for each day
   entries.forEach(entry => {
-    const date = new Date(entry.createdAt).toLocaleDateString('en-US', { weekday: 'short' });
-    const dailyData: { [date: string]: { calories: number } } = {};
-    if (!dailyData[date]) {
-      dailyData[date] = { calories: 0 };
-    }
-    dailyData[date].calories += entry.calories;
+    const day = new Date(entry.createdAt).toLocaleDateString('en-US', { weekday: 'short' });
+    dailyData[day].calories += entry.calories;
   });
 
+  // Convert to array format
   return Object.entries(dailyData).map(([day, data]) => ({
     day,
-    calories: Math.round((data as { calories: number }).calories),
+    calories: Math.round(data.calories),
   }));
 }
 
